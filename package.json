@@ -1,0 +1,44 @@
+{
+  "name": "gulp-props2json",
+  "version": "1.0.0",
+  "description": "A Gulp plugin to convert Java .properties to JSON",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --reporter spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ValeryIvanov/gulp-props2json.git"
+  },
+  "author": "ValeryIvanov",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ValeryIvanov/gulp-props2json/issues"
+  },
+  "keywords": [
+    "gulpplugin",
+    "gulp-plugin",
+    "gulp",
+    "properties",
+    "props",
+    "java",
+    "json",
+	"props2json",
+	"gulp-props2json"
+  ],
+  "homepage": "https://github.com/ValeryIvanov/gulp-props2json#readme",
+  "dependencies": {
+    "bufferstreams": "1.0.2",
+    "extend": "~3.0.0",
+    "gulp-util": "~3.0.6",
+    "is-keyword-js": "~1.0.3",
+    "properties-parser": "~0.2.3",
+    "through2": "~2.0.0"
+  },
+  "devDependencies": {
+    "assert": "~1.3.0",
+    "event-stream": "~3.3.1",
+    "mocha": "~2.2.5",
+    "should": "~7.0.2"
+  }
+}
