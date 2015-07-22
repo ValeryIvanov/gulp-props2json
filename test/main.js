@@ -20,7 +20,7 @@ describe('gulp-props2json', function() {
 	var emptyFile;
 	var specialFile;
 	var nullFile;
-
+	var nestedFile;
 
     describe('in buffer mode', function() {
 
@@ -45,10 +45,14 @@ describe('gulp-props2json', function() {
                 cwd: 'test',
                 contents: fs.readFileSync('test/special.properties')
             });
-
             nullFile = new File({
                 cwd: 'test',
                 contents: null
+            });
+			nestedFile = new File({
+                path: 'test/nested.properties',
+                cwd: 'test',
+                contents: fs.readFileSync('test/nested.properties')
             });
         });
 
@@ -179,6 +183,20 @@ describe('gulp-props2json', function() {
             stream.write(nullFile);
             stream.end();
         });
+		
+		it('should create JSON object with nested properties', function(done) {
+            var stream = props({ namespace: '', createObject: true });
+
+            stream.once('data', function(file) {
+                file.contents.toString('utf8').should.equal('{"person":{"firstName":"Peter","lastName":"Parker"}}');
+                path.extname(file.path).should.equal('.json');
+                done();
+            });
+
+            stream.write(nestedFile);
+            stream.end();
+        });
+		
     });
 
     describe('in stream mode', function() {
@@ -198,6 +216,11 @@ describe('gulp-props2json', function() {
                 path: 'test/special.properties',
                 cwd: 'test',
                 contents: fs.createReadStream('test/special.properties')
+            });
+			nestedFile = new File({
+                path: 'test/nested.properties',
+                cwd: 'test',
+                contents: fs.createReadStream('test/nested.properties')
             });
         });
 
@@ -317,5 +340,22 @@ describe('gulp-props2json', function() {
             stream.write(specialFile);
             stream.end();
         });
+		
+		it('should create JSON object with nested properties', function(done) {
+            var stream = props({ namespace: '', createObject: true });
+
+			stream.once('data', function(file) {
+                file.contents.pipe(es.wait(function(err, data) {
+                    data.toString('utf8').should.equal('{"person":{"firstName":"Peter","lastName":"Parker"}}');
+                    path.extname(file.path).should.equal('.json');
+                    done();
+                }));
+            });
+
+            stream.write(nestedFile);
+            stream.end();
+        });
+		
     });
+	
 });
