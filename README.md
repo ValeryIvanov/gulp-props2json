@@ -15,6 +15,8 @@ npm install --save-dev gulp-props2json
 
 ## Usage
 
+Add this to your `gulpfile.js`:
+
 ```js
 var props2json = require('gulp-props2json');
 
@@ -41,7 +43,7 @@ Type: `String`
 
 Default: `json`
 
-Convert properties to `.js` or `.json` format
+Convert properties to `.js` or `.json` format.
 
 **Note**: To force a `.js` output set this option `js` (without dot).
 
@@ -74,8 +76,8 @@ Type: `Boolean`
 
 Default: `false`
 
-By default every property value is treated as String. This option will try to convert every value to JSON
-For example (String) `"true"` value will be (Boolean) `true`.
+By default every property value is treated as `String`. This option will try to convert every value to `JSON`.
+For example (`String`) `"true"` value will be (`Boolean`) `true`.
 [JSON.parse](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse)
 
 
@@ -129,6 +131,14 @@ Default: `null`
 Further transform the resulting output. It has the same usage as for [JSON.stringify](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify)
 
 _The option is used only when `.json` output is generated._
+
+
+## Errors
+
+`gulp-props2json` emits an 'error' event if something goes wrong.
+
+To handle errors across your entire pipeline, see the
+[gulp](https://github.com/gulpjs/gulp/blob/master/docs/recipes/combining-streams-to-handle-errors.md#combining-streams-to-handle-errors) documentation.
 
 
 ## License

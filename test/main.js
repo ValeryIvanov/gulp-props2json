@@ -182,7 +182,20 @@ describe('gulp-props2json', function() {
             var stream = props({ outputType: 'js', complexTypes: true });
 
             stream.once('data', function(file) {
-                file.contents.toString('utf8').should.equal('var props=props||{};props[\'person.firstName\']=\'Peter\';props[\'person.lastName\']=\'Parker\';props[\'person.real\']=false;props[\'person.age\']=23;');
+                file.contents.toString('utf8').should.equal('var props=props||{};props["person.firstName"]="Peter";props["person.lastName"]="Parker";props["person.real"]=false;props["person.age"]=23;');
+                path.extname(file.path).should.equal('.js');
+                done();
+            });
+
+            stream.write(propsFile);
+            stream.end();
+        });
+
+        it('should return valid JS with nested properties and complex types', function(done) {
+            var stream = props({ outputType: 'js', nestedProps: true, complexTypes: true });
+
+            stream.once('data', function(file) {
+                file.contents.toString('utf8').should.equal('var props=props||{};props["person"]=props["person"]||{};props["person"]["firstName"]=props["person"]["firstName"]||"Peter";props["person"]["lastName"]=props["person"]["lastName"]||"Parker";props["person"]["real"]=props["person"]["real"]||false;props["person"]["age"]=props["person"]["age"]||23;');
                 path.extname(file.path).should.equal('.js');
                 done();
             });
@@ -199,7 +212,7 @@ describe('gulp-props2json', function() {
             var stream = props({ outputType: 'js', minify: false });
 
             stream.once('data', function(file) {
-                file.contents.toString('utf8').should.equal('var props = props || {};\nprops[\'a#b!c=d:\'] = \'AAAA#BBBB!CCCC=DDDD:EEEE\';\n');
+                file.contents.toString('utf8').should.equal('var props = props || {};\nprops["a#b!c=d:"] = "AAAA#BBBB!CCCC=DDDD:EEEE";\n');
                 path.extname(file.path).should.equal('.js');
                 done();
             });
@@ -212,7 +225,7 @@ describe('gulp-props2json', function() {
             var stream = props({ outputType: 'js' });
 
             stream.once('data', function(file) {
-                file.contents.toString('utf8').should.equal('var props=props||{};props[\'a#b!c=d:\']=\'AAAA#BBBB!CCCC=DDDD:EEEE\';');
+                file.contents.toString('utf8').should.equal('var props=props||{};props["a#b!c=d:"]="AAAA#BBBB!CCCC=DDDD:EEEE";');
                 path.extname(file.path).should.equal('.js');
                 done();
             });
@@ -271,7 +284,7 @@ describe('gulp-props2json', function() {
             var stream = props({ outputType: 'js', namespace: '123' });
 
             stream.once('data', function(file) {
-                file.contents.toString('utf8').should.equal('var _123=_123||{};_123[\'person.firstName\']=\'Peter\';_123[\'person.lastName\']=\'Parker\';_123[\'person.real\']=\'false\';_123[\'person.age\']=\'23\';');
+                file.contents.toString('utf8').should.equal('var _123=_123||{};_123["person.firstName"]="Peter";_123["person.lastName"]="Parker";_123["person.real"]="false";_123["person.age"]="23";');
                 path.extname(file.path).should.equal('.js');
                 done();
             });
@@ -460,7 +473,7 @@ describe('gulp-props2json', function() {
 
             stream.once('data', function(file) {
                 file.contents.pipe(es.wait(function(err, data) {
-                    data.toString('utf8').should.equal('var props = props || {};\nprops[\'a#b!c=d:\'] = \'AAAA#BBBB!CCCC=DDDD:EEEE\';\n');
+                    data.toString('utf8').should.equal('var props = props || {};\nprops["a#b!c=d:"] = "AAAA#BBBB!CCCC=DDDD:EEEE";\n');
                     path.extname(file.path).should.equal('.js');
                     done();
                 }));
@@ -475,7 +488,7 @@ describe('gulp-props2json', function() {
 
             stream.once('data', function(file) {
                 file.contents.pipe(es.wait(function(err, data) {
-                    data.toString('utf8').should.equal('var props=props||{};props[\'a#b!c=d:\']=\'AAAA#BBBB!CCCC=DDDD:EEEE\';');
+                    data.toString('utf8').should.equal('var props=props||{};props["a#b!c=d:"]="AAAA#BBBB!CCCC=DDDD:EEEE";');
                     path.extname(file.path).should.equal('.js');
                     done();
                 }));
@@ -507,7 +520,7 @@ describe('gulp-props2json', function() {
             stream.once('data', function(file) {
 
                 file.contents.pipe(es.wait(function(err, data) {
-                    data.toString('utf8').should.equal('var _123=_123||{};_123[\'person.firstName\']=\'Peter\';_123[\'person.lastName\']=\'Parker\';_123[\'person.real\']=\'false\';_123[\'person.age\']=\'23\';');
+                    data.toString('utf8').should.equal('var _123=_123||{};_123["person.firstName"]="Peter";_123["person.lastName"]="Parker";_123["person.real"]="false";_123["person.age"]="23";');
                     path.extname(file.path).should.equal('.js');
                     done();
                 }));

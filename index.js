@@ -9,8 +9,12 @@ var BufferStreams = require('bufferstreams');
 
 var PluginError = gutil.PluginError;
 var PLUGIN_NAME = 'gulp-props2json';
-var entryTemplate = '<%=data.ns%>[\'<%=data.key%>\'] = <%=data.value%>;';
-var minifiedTemplate = '<%=data.ns%>[\'<%=data.key%>\']=<%=data.value%>;';
+var entryTemplate = '<%=data.ns%>["<%=data.key%>"] = <%=data.value%>;';
+var minifiedTemplate = '<%=data.ns%>["<%=data.key%>"]=<%=data.value%>;';
+var nestedObjectTemplate = '<%=data.ns%><%=data.key%> = <%=data.ns%><%=data.key%> || {};';
+var nestedPropTemplate = '<%=data.ns%><%=data.key%> = <%=data.ns%><%=data.key%> || <%=data.value%>;';
+var nestedMinifiedObjectTemplate = '<%=data.ns%><%=data.key%>=<%=data.ns%><%=data.key%>||{};';
+var nestedMinifiedPropTemplate = '<%=data.ns%><%=data.key%>=<%=data.ns%><%=data.key%>||<%=data.value%>;';
 var rKey = /([\\'])/g;
 var rValue = /([\\"'])/g;
 
@@ -25,10 +29,10 @@ function getValidIdentifier(str) {
     return identifier;
 }
 
-function addProperty(obj, str, val, options) {
-    str = str.split(options.nestingDelimiter);
-    while (str.length > 1) {
-        var prop = str.shift();
+function addProperty(obj, key, val, options) {
+    var keys = key.split(options.nestingDelimiter);
+    while (keys.length > 1) {
+        var prop = keys.shift();
         if (!obj.hasOwnProperty(prop)) {
             obj[prop] = {};
         }
@@ -37,7 +41,7 @@ function addProperty(obj, str, val, options) {
     if (options.complexTypes) {
         val = getParsedJSON(val);
     }
-    return obj[str.shift()] = val;
+    return obj[keys.shift()] = val;
 }
 
 function addNamespaceAndPrettify(obj, options) {
@@ -60,12 +64,17 @@ function getParsedJSON(value) {
     }
 }
 
+function getNestedObject(props, options) {
+    var obj = {};
+    Object.keys(props).forEach(function(key) {
+        addProperty(obj, key, props[key], options);
+    });
+    return obj;
+}
+
 function getJsonOutput(options, props) {
     if (options.nestedProps) {
-        var obj = {};
-        Object.keys(props).forEach(function(key) {
-            addProperty(obj, key, props[key], options);
-        });
+        var obj = getNestedObject(props, options);
         obj = addNamespaceAndPrettify(obj, options);
         return JSON.stringify(obj, options.replacer, options.space);
     } else {
@@ -89,35 +98,81 @@ function getJsOutput(options, props) {
     } else {
         output = ['var ' + options.namespace + ' = ' + options.namespace + ' || {};'];
     }
-    var template = options.minify ? minifiedTemplate : entryTemplate;
-    Object.keys(props).forEach(function(key) {
-        var val;
-        if (options.complexTypes) {
-            try {
-                val = JSON.parse(props[key].replace(rValue, '\\$1'));
-            } catch (error) {
-                val = '\'' + props[key].replace(rValue, '\\$1') + '\'';
-            }
-        } else {
-            val = '\'' + props[key].replace(rValue, '\\$1') + '\'';
-        }
-        output.push(gutil.template(template, {
-            file: {
-            },
-            data: {
-                ns: options.namespace,
-                key: key.replace(rKey, '\\$1'),
-                value: val
-            }
-        }));
-    });
-    options.minify ? output = output.join('') : output = output.join('\n') + '\n';
-
-    //TODO
     if (options.nestedProps) {
+        var obj = {};
+        Object.keys(props).forEach(function(key) {
+            var val = props[key];
+            var keys = key.split(options.nestingDelimiter);
+            var propPart = '';
+            while (keys.length > 1) {
+                var prop = keys.shift();
+                if (!obj.hasOwnProperty(prop)) {
+                    propPart += '["' + prop + '"]';
+                    obj[prop] = {};
+                }
+                obj = obj[prop];
+            }
+            var objTemplate = options.minify ? nestedMinifiedObjectTemplate : nestedObjectTemplate;
+            var objectValue = gutil.template(objTemplate, {
+                file: { },
+                data: {
+                    ns: options.namespace,
+                    key: propPart
+                }
+            });
+            if (output.indexOf(objectValue) === -1) {
+                output.push(objectValue);
+            }
+            if (options.complexTypes) {
+                try {
+                    val = JSON.parse(props[key]);
+                } catch (error) {
+                    val = '"' + props[key] + '"';
+                }
+            }
+            var lastProp = keys.shift();
+            propPart += '["' + lastProp + '"]';
 
+            var propTemplate = options.minify ? nestedMinifiedPropTemplate : nestedPropTemplate;
+            var propValue = gutil.template(propTemplate, {
+                file: { },
+                data: {
+                    ns: options.namespace,
+                    key: propPart,
+                    value: val
+                }
+            });
+            if (output.indexOf(propValue) === -1) {
+                output.push(propValue);
+            }
+            obj[lastProp] = val;
+        });
+        options.minify ? output = output.join('') : output = output.join('\n') + '\n';
     } else {
-
+        var template = options.minify ? minifiedTemplate : entryTemplate;
+        Object.keys(props).forEach(function(key) {
+            var val;
+            if (options.complexTypes) {
+                try {
+                    //TODO check rValue
+                    val = JSON.parse(props[key].replace(rValue, '\\$1'));
+                } catch (error) {
+                    val = '"' + props[key].replace(rValue, '\\$1') + '"';
+                }
+            } else {
+                val = '"' + props[key].replace(rValue, '\\$1') + '"';
+            }
+            output.push(gutil.template(template, {
+                file: { },
+                //TODO check rKey
+                data: {
+                    ns: options.namespace,
+                    key: key.replace(rKey, '\\$1'),
+                    value: val
+                }
+            }));
+        });
+        options.minify ? output = output.join('') : output = output.join('\n') + '\n';
     }
     return output;
 }
