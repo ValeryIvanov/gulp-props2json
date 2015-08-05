@@ -10,30 +10,30 @@ var es = require('event-stream');
 require('should');
 require('mocha');
 
-
 describe('gulp-props2json', function() {
 
     // Test files
 
-    var validFile;
-	var noExtFile;
-	var emptyFile;
-	var specialFile;
+    var propsFile;
 	var nullFile;
-	var nestedFile;
+	var emptyFile;//TODO both
+	var specialFile;
+	var noExtFile;
+
+    // buffer mode
 
     describe('in buffer mode', function() {
 
         beforeEach(function() {
-            validFile = new File({
-                path: 'test/valid.properties',
+            propsFile = new File({
+                path: 'test/props.properties',
                 cwd: 'test',
-                contents: fs.readFileSync('test/valid.properties')
+                contents: fs.readFileSync('test/props.properties')
             });
             noExtFile = new File({
                 path: 'test/noExt.1',
                 cwd: 'test',
-                contents: new Buffer('test/noExt.1')
+                contents: fs.readFileSync('test/noExt.1')
             });
             emptyFile = new File({
                 path: 'test/empty.properties',
@@ -49,120 +49,157 @@ describe('gulp-props2json', function() {
                 cwd: 'test',
                 contents: null
             });
-			nestedFile = new File({
-                path: 'test/nested.properties',
-                cwd: 'test',
-                contents: fs.readFileSync('test/nested.properties')
-            });
         });
 
-        it('should return JSON when namespace is empty', function(done) {
-            var stream = props({ namespace: '' });
+        //json
+
+        // nested properties
+
+        it('should return valid JSON with nested properties', function(done) {
+            var stream = props({ outputType: 'json', nestedProps: true });
 
             stream.once('data', function(file) {
-                file.contents.toString('utf8').should.equal('{"name":"Gulp","message":"Hello!"}');
+                file.contents.toString('utf8').should.equal('{"person":{"firstName":"Peter","lastName":"Parker","real":"false","age":"23"}}');
                 path.extname(file.path).should.equal('.json');
                 done();
             });
 
-            stream.write(validFile);
+            stream.write(propsFile);
             stream.end();
         });
 
-        it('should return pretty JSON when namespace is empty and space=2 option defined', function(done) {
-            var stream = props({ namespace: '', space: 2 });
+        it('should return valid JSON with nested properties and namespace', function(done) {
+            var stream = props({ outputType: 'json', nestedProps: true, namespace: 'namespace' });
 
             stream.once('data', function(file) {
-                file.contents.toString('utf8').should.equal('{\n  "name": "Gulp",\n  "message": "Hello!"\n}');
+                file.contents.toString('utf8').should.equal('{"namespace":{"person":{"firstName":"Peter","lastName":"Parker","real":"false","age":"23"}}}');
                 path.extname(file.path).should.equal('.json');
                 done();
             });
 
-            stream.write(validFile);
+            stream.write(propsFile);
             stream.end();
         });
 
-        it('should return pretty JSON when namespace is empty and space=4 option defined', function(done) {
-            var stream = props({ namespace: '', space: 4 });
+        it('should return valid JSON with nested properties, namespace and complex types', function(done) {
+            var stream = props({ outputType: 'json', nestedProps: true, namespace: 'namespace', complexTypes: true });
 
             stream.once('data', function(file) {
-                file.contents.toString('utf8').should.equal('{\n    "name": "Gulp",\n    "message": "Hello!"\n}');
+                file.contents.toString('utf8').should.equal('{"namespace":{"person":{"firstName":"Peter","lastName":"Parker","real":false,"age":23}}}');
                 path.extname(file.path).should.equal('.json');
                 done();
             });
 
-            stream.write(validFile);
+            stream.write(propsFile);
             stream.end();
         });
 
-        it('should use default namespace when not specified', function(done) {
-            var stream = props();
+        it('should return valid JSON with nested properties, namespace, complex types and pretty output', function(done) {
+            var stream = props({ outputType: 'json', nestedProps: true, namespace: 'namespace', complexTypes: true, minify: false });
 
             stream.once('data', function(file) {
-                file.contents.toString('utf8').should.equal('var config = config || {};\nconfig[\'name\'] = \'Gulp\';\nconfig[\'message\'] = \'Hello!\';\n');
+                file.contents.toString('utf8').should.equal('{\n  "namespace": {\n    "person": {\n      "firstName": "Peter",\n      "lastName": "Parker",\n      "real": false,\n      "age": 23\n    }\n  }\n}');
+                path.extname(file.path).should.equal('.json');
+                done();
+            });
+
+            stream.write(propsFile);
+            stream.end();
+        });
+
+        // simple properties
+
+        it('should return valid JSON with simple properties', function(done) {
+            var stream = props({ outputType: 'json', nestedProps: false });
+
+            stream.once('data', function(file) {
+                file.contents.toString('utf8').should.equal('{"person.firstName":"Peter","person.lastName":"Parker","person.real":"false","person.age":"23"}');
+                path.extname(file.path).should.equal('.json');
+                done();
+            });
+
+            stream.write(propsFile);
+            stream.end();
+        });
+
+        it('should return valid JSON with simple properties and namespace', function(done) {
+            var stream = props({ outputType: 'json', nestedProps: false, namespace: 'namespace' });
+
+            stream.once('data', function(file) {
+                file.contents.toString('utf8').should.equal('{"namespace":{"person.firstName":"Peter","person.lastName":"Parker","person.real":"false","person.age":"23"}}');
+                path.extname(file.path).should.equal('.json');
+                done();
+            });
+
+            stream.write(propsFile);
+            stream.end();
+        });
+
+        it('should return valid JSON with simple properties, namespace and complex types', function(done) {
+            var stream = props({ outputType: 'json', nestedProps: false, namespace: 'namespace', complexTypes: true });
+
+            stream.once('data', function(file) {
+                file.contents.toString('utf8').should.equal('{"namespace":{"person.firstName":"Peter","person.lastName":"Parker","person.real":false,"person.age":23}}');
+                path.extname(file.path).should.equal('.json');
+                done();
+            });
+
+            stream.write(propsFile);
+            stream.end();
+        });
+
+        it('should return valid JSON with simple properties, namespace, complex types and pretty output', function(done) {
+            var stream = props({ outputType: 'json', nestedProps: false, namespace: 'namespace', complexTypes: true, minify: false });
+
+            stream.once('data', function(file) {
+                file.contents.toString('utf8').should.equal('{\n  "namespace": {\n    "person.firstName": "Peter",\n    "person.lastName": "Parker",\n    "person.real": false,\n    "person.age": 23\n  }\n}');
+                path.extname(file.path).should.equal('.json');
+                done();
+            });
+
+            stream.write(propsFile);
+            stream.end();
+        });
+
+        //special
+
+        it('should return valid JSON with special characters with minification', function(done) {
+            var stream = props({ outputType: 'json' });
+
+            stream.once('data', function(file) {
+                file.contents.toString('utf8').should.equal('{"a#b!c=d:":"AAAA#BBBB!CCCC=DDDD:EEEE"}');
+                path.extname(file.path).should.equal('.json');
+                done();
+            });
+
+            stream.write(specialFile);
+            stream.end();
+        });
+
+        //js
+
+        it('should return valid JS with complex types', function(done) {
+            var stream = props({ outputType: 'js', complexTypes: true });
+
+            stream.once('data', function(file) {
+                file.contents.toString('utf8').should.equal('var props=props||{};props[\'person.firstName\']=\'Peter\';props[\'person.lastName\']=\'Parker\';props[\'person.real\']=false;props[\'person.age\']=23;');
                 path.extname(file.path).should.equal('.js');
                 done();
             });
 
-            stream.write(validFile);
+            stream.write(propsFile);
             stream.end();
         });
 
-        it('should use custom namespace', function(done) {
-            var stream = props({ namespace: 'state' });
+        //other
+
+        //special
+
+        it('should return valid JS with special characters, without minification', function(done) {
+            var stream = props({ outputType: 'js', minify: false });
 
             stream.once('data', function(file) {
-                file.contents.toString('utf8').should.equal('var state = state || {};\nstate[\'name\'] = \'Gulp\';\nstate[\'message\'] = \'Hello!\';\n');
-                path.extname(file.path).should.equal('.js');
-                done();
-            });
-
-            stream.write(validFile);
-            stream.end();
-        });
-
-        it('should reject reserved word for namespace', function(done) {
-            var stream = props({ namespace: 'void' });
-
-            stream.once('error', function(error) {
-                error.message.should.equal('namespace option cannot be a reserved word.');
-                done();
-            });
-
-            stream.write(validFile);
-            stream.end();
-        });
-
-        it('should rename the namespace if is not a valid identifier', function(done) {
-            var stream = props({ namespace: '123' });
-
-            stream.once('data', function(file) {
-                file.contents.toString('utf8').should.equal('var _123 = _123 || {};\n_123[\'name\'] = \'Gulp\';\n_123[\'message\'] = \'Hello!\';\n');
-                path.extname(file.path).should.equal('.js');
-                done();
-            });
-
-            stream.write(validFile);
-            stream.end();
-        });
-
-        it('should append the extension instead of replacing it if appendExt flag is active', function(done) {
-            var stream = props({ appendExt: true });
-
-            stream.once('data', function(file) {
-                path.basename(file.path).should.equal('noExt.1.js');
-                done();
-            });
-
-            stream.write(noExtFile);
-            stream.end();
-        });
-
-        it('should handle special characters properly', function(done) {
-            var stream = props({ namespace: 'state' });
-
-            stream.once('data', function(file) {
-                file.contents.toString('utf8').should.equal('var state = state || {};\nstate[\'a#b!c=d:\'] = \'AAAA#BBBB!CCCC=DDDD:EEEE\';\n');
+                file.contents.toString('utf8').should.equal('var props = props || {};\nprops[\'a#b!c=d:\'] = \'AAAA#BBBB!CCCC=DDDD:EEEE\';\n');
                 path.extname(file.path).should.equal('.js');
                 done();
             });
@@ -170,6 +207,21 @@ describe('gulp-props2json', function() {
             stream.write(specialFile);
             stream.end();
         });
+
+        it('should return valid JS with special characters, with minification', function(done) {
+            var stream = props({ outputType: 'js' });
+
+            stream.once('data', function(file) {
+                file.contents.toString('utf8').should.equal('var props=props||{};props[\'a#b!c=d:\']=\'AAAA#BBBB!CCCC=DDDD:EEEE\';');
+                path.extname(file.path).should.equal('.js');
+                done();
+            });
+
+            stream.write(specialFile);
+            stream.end();
+        });
+
+        //null file
 
         it('should do nothing when contents is null', function(done) {
             var stream = props();
@@ -183,29 +235,62 @@ describe('gulp-props2json', function() {
             stream.write(nullFile);
             stream.end();
         });
-		
-		it('should create JSON object with nested properties', function(done) {
-            var stream = props({ namespace: '', createObject: true });
+
+        //no extension
+
+        it('should append the extension instead of replacing it if appendExt flag is active', function(done) {
+            var stream = props({ outputType: 'json', nestedProps: true, appendExt: true });
 
             stream.once('data', function(file) {
-                file.contents.toString('utf8').should.equal('{"person":{"firstName":"Peter","lastName":"Parker"}}');
-                path.extname(file.path).should.equal('.json');
+                file.contents.toString('utf8').should.equal('{"person":{"firstName":"Peter","lastName":"Parker","real":"false","age":"23"}}');
+                path.basename(file.path).should.equal('noExt.1.json');
                 done();
             });
 
-            stream.write(nestedFile);
+            stream.write(noExtFile);
             stream.end();
         });
-		
+
+        //reserved word
+
+        it('should reject reserved word for namespace', function(done) {
+            var stream = props({ namespace: 'void' });
+
+            stream.once('error', function(error) {
+                error.message.should.equal('namespace option cannot be a reserved word.');
+                done();
+            });
+
+            stream.write(propsFile);
+            stream.end();
+        });
+
+        //invalid identifier
+
+        it('should rename the namespace if is not a valid identifier', function(done) {
+            var stream = props({ outputType: 'js', namespace: '123' });
+
+            stream.once('data', function(file) {
+                file.contents.toString('utf8').should.equal('var _123=_123||{};_123[\'person.firstName\']=\'Peter\';_123[\'person.lastName\']=\'Parker\';_123[\'person.real\']=\'false\';_123[\'person.age\']=\'23\';');
+                path.extname(file.path).should.equal('.js');
+                done();
+            });
+
+            stream.write(propsFile);
+            stream.end();
+        });
+
     });
+
+    // stream mode
 
     describe('in stream mode', function() {
 
         beforeEach(function() {
-            validFile = new File({
-                path: 'test/valid.properties',
+            propsFile = new File({
+                path: 'test/props.properties',
                 cwd: 'test',
-                contents: fs.createReadStream('test/valid.properties')
+                contents: fs.createReadStream('test/props.properties')
             });
             emptyFile = new File({
                 path: 'test/empty.properties',
@@ -217,87 +302,190 @@ describe('gulp-props2json', function() {
                 cwd: 'test',
                 contents: fs.createReadStream('test/special.properties')
             });
-			nestedFile = new File({
-                path: 'test/nested.properties',
+            nullFile = new File({
                 cwd: 'test',
-                contents: fs.createReadStream('test/nested.properties')
+                contents: null
             });
         });
 
-        it('should return JSON when namespace is empty', function(done) {
-            var stream = props({ namespace: '' });
+        // json
+
+        // nested properties
+
+        it('should return valid JSON with nested properties', function(done) {
+            var stream = props({ outputType: 'json', nestedProps: true });
 
             stream.once('data', function(file) {
                 file.contents.pipe(es.wait(function(err, data) {
-                    data.toString('utf8').should.equal('{"name":"Gulp","message":"Hello!"}');
+                    data.toString('utf8').should.equal('{"person":{"firstName":"Peter","lastName":"Parker","real":"false","age":"23"}}');
                     path.extname(file.path).should.equal('.json');
                     done();
                 }));
             });
 
-            stream.write(validFile);
+            stream.write(propsFile);
             stream.end();
         });
 
-        it('should return pretty JSON when namespace is empty and space=2 option defined', function(done) {
-            var stream = props({ namespace: '', space: 2 });
+        it('should return valid JSON with nested properties and namespace', function(done) {
+            var stream = props({ outputType: 'json', nestedProps: true, namespace: 'namespace' });
 
             stream.once('data', function(file) {
                 file.contents.pipe(es.wait(function(err, data) {
-                    data.toString('utf8').should.equal('{\n  "name": "Gulp",\n  "message": "Hello!"\n}');
+                    data.toString('utf8').should.equal('{"namespace":{"person":{"firstName":"Peter","lastName":"Parker","real":"false","age":"23"}}}');
                     path.extname(file.path).should.equal('.json');
                     done();
                 }));
             });
 
-            stream.write(validFile);
+            stream.write(propsFile);
             stream.end();
         });
 
-        it('should return pretty JSON when namespace is empty and space=4 option defined', function(done) {
-            var stream = props({ namespace: '', space: 4 });
+        it('should return valid JSON with nested properties, namespace and complex types', function(done) {
+            var stream = props({ outputType: 'json', nestedProps: true, namespace: 'namespace', complexTypes: true });
 
             stream.once('data', function(file) {
                 file.contents.pipe(es.wait(function(err, data) {
-                    data.toString('utf8').should.equal('{\n    "name": "Gulp",\n    "message": "Hello!"\n}');
+                    data.toString('utf8').should.equal('{"namespace":{"person":{"firstName":"Peter","lastName":"Parker","real":false,"age":23}}}');
                     path.extname(file.path).should.equal('.json');
                     done();
                 }));
             });
 
-            stream.write(validFile);
+            stream.write(propsFile);
             stream.end();
         });
 
-        it('should use default namespace when not specified', function(done) {
-            var stream = props();
+        it('should return valid JSON with nested properties, namespace, complex types and pretty output', function(done) {
+            var stream = props({ outputType: 'json', nestedProps: true, namespace: 'namespace', complexTypes: true, minify: false });
 
             stream.once('data', function(file) {
                 file.contents.pipe(es.wait(function(err, data) {
-                    data.toString('utf8').should.equal('var config = config || {};\nconfig[\'name\'] = \'Gulp\';\nconfig[\'message\'] = \'Hello!\';\n');
+                    data.toString('utf8').should.equal('{\n  "namespace": {\n    "person": {\n      "firstName": "Peter",\n      "lastName": "Parker",\n      "real": false,\n      "age": 23\n    }\n  }\n}');
+                    path.extname(file.path).should.equal('.json');
+                    done();
+                }));
+            });
+
+            stream.write(propsFile);
+            stream.end();
+        });
+
+        // simple properties
+
+        it('should return valid JSON with simple properties', function(done) {
+            var stream = props({ outputType: 'json', nestedProps: false });
+
+            stream.once('data', function(file) {
+                file.contents.pipe(es.wait(function(err, data) {
+                    data.toString('utf8').should.equal('{"person.firstName":"Peter","person.lastName":"Parker","person.real":"false","person.age":"23"}');
+                    path.extname(file.path).should.equal('.json');
+                    done();
+                }));
+            });
+
+            stream.write(propsFile);
+            stream.end();
+        });
+
+        it('should return valid JSON with simple properties and namespace', function(done) {
+            var stream = props({ outputType: 'json', nestedProps: false, namespace: 'namespace' });
+
+            stream.once('data', function(file) {
+                file.contents.pipe(es.wait(function(err, data) {
+                    data.toString('utf8').should.equal('{"namespace":{"person.firstName":"Peter","person.lastName":"Parker","person.real":"false","person.age":"23"}}');
+                    path.extname(file.path).should.equal('.json');
+                    done();
+                }));
+            });
+
+            stream.write(propsFile);
+            stream.end();
+        });
+
+        it('should return valid JSON with simple properties, namespace and complex types', function(done) {
+            var stream = props({ outputType: 'json', nestedProps: false, namespace: 'namespace', complexTypes: true });
+
+            stream.once('data', function(file) {
+                file.contents.pipe(es.wait(function(err, data) {
+                    data.toString('utf8').should.equal('{"namespace":{"person.firstName":"Peter","person.lastName":"Parker","person.real":false,"person.age":23}}');
+                    path.extname(file.path).should.equal('.json');
+                    done();
+                }));
+            });
+
+            stream.write(propsFile);
+            stream.end();
+        });
+
+        it('should return valid JSON with simple properties, namespace, complex types and pretty output', function(done) {
+            var stream = props({ outputType: 'json', nestedProps: false, namespace: 'namespace', complexTypes: true, minify: false });
+
+            stream.once('data', function(file) {
+                file.contents.pipe(es.wait(function(err, data) {
+                    data.toString('utf8').should.equal('{\n  "namespace": {\n    "person.firstName": "Peter",\n    "person.lastName": "Parker",\n    "person.real": false,\n    "person.age": 23\n  }\n}');
+                    path.extname(file.path).should.equal('.json');
+                    done();
+                }));
+            });
+
+            stream.write(propsFile);
+            stream.end();
+        });
+
+        //special
+
+        it('should return valid JSON with special characters with minification', function(done) {
+            var stream = props({ outputType: 'json' });
+
+            stream.once('data', function(file) {
+                file.contents.pipe(es.wait(function(err, data) {
+                    data.toString('utf8').should.equal('{"a#b!c=d:":"AAAA#BBBB!CCCC=DDDD:EEEE"}');
+                    path.extname(file.path).should.equal('.json');
+                    done();
+                }));
+            });
+
+            stream.write(specialFile);
+            stream.end();
+        });
+
+        //js
+
+        //special
+
+        it('should return valid JS with special characters, without minification', function(done) {
+            var stream = props({ outputType: 'js', minify: false });
+
+            stream.once('data', function(file) {
+                file.contents.pipe(es.wait(function(err, data) {
+                    data.toString('utf8').should.equal('var props = props || {};\nprops[\'a#b!c=d:\'] = \'AAAA#BBBB!CCCC=DDDD:EEEE\';\n');
                     path.extname(file.path).should.equal('.js');
                     done();
                 }));
             });
 
-            stream.write(validFile);
+            stream.write(specialFile);
             stream.end();
         });
 
-        it('should use custom namespace', function(done) {
-            var stream = props({ namespace: 'state' });
+        it('should return valid JS with special characters, with minification', function(done) {
+            var stream = props({ outputType: 'js' });
 
             stream.once('data', function(file) {
                 file.contents.pipe(es.wait(function(err, data) {
-                    data.toString('utf8').should.equal('var state = state || {};\nstate[\'name\'] = \'Gulp\';\nstate[\'message\'] = \'Hello!\';\n');
+                    data.toString('utf8').should.equal('var props=props||{};props[\'a#b!c=d:\']=\'AAAA#BBBB!CCCC=DDDD:EEEE\';');
                     path.extname(file.path).should.equal('.js');
                     done();
                 }));
             });
 
-            stream.write(validFile);
+            stream.write(specialFile);
             stream.end();
         });
+
+        //other
 
         it('should reject reserved word for namespace', function(done) {
             var stream = props({ namespace: 'void' });
@@ -307,55 +495,29 @@ describe('gulp-props2json', function() {
                 done();
             });
 
-            stream.write(validFile);
+            stream.write(propsFile);
             stream.end();
         });
+
+        //invalid identifier
 
         it('should rename the namespace if is not a valid identifier', function(done) {
-            var stream = props({ namespace: '123' });
+            var stream = props({ outputType: 'js', namespace: '123' });
 
             stream.once('data', function(file) {
+
                 file.contents.pipe(es.wait(function(err, data) {
-                    data.toString('utf8').should.equal('var _123 = _123 || {};\n_123[\'name\'] = \'Gulp\';\n_123[\'message\'] = \'Hello!\';\n');
+                    data.toString('utf8').should.equal('var _123=_123||{};_123[\'person.firstName\']=\'Peter\';_123[\'person.lastName\']=\'Parker\';_123[\'person.real\']=\'false\';_123[\'person.age\']=\'23\';');
                     path.extname(file.path).should.equal('.js');
                     done();
                 }));
+
             });
 
-            stream.write(validFile);
+            stream.write(propsFile);
             stream.end();
         });
 
-        it('should handle special characters properly', function(done) {
-            var stream = props({ namespace: 'state' });
-
-            stream.once('data', function(file) {
-                file.contents.pipe(es.wait(function(err, data) {
-                    data.toString('utf8').should.equal('var state = state || {};\nstate[\'a#b!c=d:\'] = \'AAAA#BBBB!CCCC=DDDD:EEEE\';\n');
-                    path.extname(file.path).should.equal('.js');
-                    done();
-                }));
-            });
-
-            stream.write(specialFile);
-            stream.end();
-        });
-		
-		it('should create JSON object with nested properties', function(done) {
-            var stream = props({ namespace: '', createObject: true });
-
-			stream.once('data', function(file) {
-                file.contents.pipe(es.wait(function(err, data) {
-                    data.toString('utf8').should.equal('{"person":{"firstName":"Peter","lastName":"Parker"}}');
-                    path.extname(file.path).should.equal('.json');
-                    done();
-                }));
-            });
-
-            stream.write(nestedFile);
-            stream.end();
-        });
-		
     });
 	
 });
