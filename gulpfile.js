@@ -14,7 +14,7 @@ gulp.task('watch-mocha', function() {
 });
 
 gulp.task('test', function (cb) {
-    return gulp.src(['index.js'])
+    gulp.src(['index.js'])
         .pipe(istanbul()) // Covering files
         .pipe(istanbul.hookRequire()) // Force `require` to return covered files
         .on('finish', function () {

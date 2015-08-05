@@ -191,7 +191,46 @@ describe('gulp-props2json', function() {
             stream.end();
         });
 
-        it('should return valid JS with nested properties and complex types', function(done) {
+        it('should return valid JS with nested properties', function(done) {
+            var stream = props({ outputType: 'js', nestedProps: true, complexTypes: false, minify: false });
+
+            stream.once('data', function(file) {
+                file.contents.toString('utf8').should.equal('var props = props || {};\nprops["person"] = props["person"] || {};\nprops["person"]["firstName"] = props["person"]["firstName"] || "Peter";\nprops["person"]["lastName"] = props["person"]["lastName"] || "Parker";\nprops["person"]["real"] = props["person"]["real"] || "false";\nprops["person"]["age"] = props["person"]["age"] || "23";\n');
+                path.extname(file.path).should.equal('.js');
+                done();
+            });
+
+            stream.write(propsFile);
+            stream.end();
+        });
+
+        it('should return valid JS with nested properties and minified', function(done) {
+            var stream = props({ outputType: 'js', nestedProps: true, complexTypes: false, minify: true });
+
+            stream.once('data', function(file) {
+                file.contents.toString('utf8').should.equal('var props=props||{};props["person"]=props["person"]||{};props["person"]["firstName"]=props["person"]["firstName"]||"Peter";props["person"]["lastName"]=props["person"]["lastName"]||"Parker";props["person"]["real"]=props["person"]["real"]||"false";props["person"]["age"]=props["person"]["age"]||"23";');
+                path.extname(file.path).should.equal('.js');
+                done();
+            });
+
+            stream.write(propsFile);
+            stream.end();
+        });
+
+        it('should return valid JS with nested properties, complex types', function(done) {
+            var stream = props({ outputType: 'js', nestedProps: true, complexTypes: true, minify: false });
+
+            stream.once('data', function(file) {
+                file.contents.toString('utf8').should.equal('var props = props || {};\nprops["person"] = props["person"] || {};\nprops["person"]["firstName"] = props["person"]["firstName"] || "Peter";\nprops["person"]["lastName"] = props["person"]["lastName"] || "Parker";\nprops["person"]["real"] = props["person"]["real"] || false;\nprops["person"]["age"] = props["person"]["age"] || 23;\n');
+                path.extname(file.path).should.equal('.js');
+                done();
+            });
+
+            stream.write(propsFile);
+            stream.end();
+        });
+
+        it('should return valid JS with nested properties, complex types and minified', function(done) {
             var stream = props({ outputType: 'js', nestedProps: true, complexTypes: true });
 
             stream.once('data', function(file) {

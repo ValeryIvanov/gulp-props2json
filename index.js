@@ -129,10 +129,11 @@ function getJsOutput(options, props) {
                 } catch (error) {
                     val = '"' + props[key] + '"';
                 }
+            } else {
+                val = '"' + props[key] + '"';
             }
             var lastProp = keys.shift();
             propPart += '["' + lastProp + '"]';
-
             var propTemplate = options.minify ? nestedMinifiedPropTemplate : nestedPropTemplate;
             var propValue = gutil.template(propTemplate, {
                 file: { },
