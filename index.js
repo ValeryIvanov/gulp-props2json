@@ -88,8 +88,90 @@ function getJsonOutput(options, props) {
     }
 }
 
+function getJsNestedPropsOutput(options, props) {
+    var output = [];
+    var obj = {};
+    Object.keys(props).forEach(function(key) {
+        var val = props[key];
+        var keys = key.split(options.nestingDelimiter);
+        var propPart = '';
+        while (keys.length > 1) {
+            var prop = keys.shift();
+            if (!obj.hasOwnProperty(prop)) {
+                propPart += '["' + prop + '"]';
+                obj[prop] = {};
+            }
+            obj = obj[prop];
+        }
+        var objTemplate = options.minify ? nestedMinifiedObjectTemplate : nestedObjectTemplate;
+        var objectValue = gutil.template(objTemplate, {
+            file: { },
+            data: {
+                ns: options.namespace,
+                key: propPart
+            }
+        });
+        if (output.indexOf(objectValue) === -1) {
+            output.push(objectValue);
+        }
+        if (options.complexTypes) {
+            try {
+                val = JSON.parse(props[key]);
+            } catch (error) {
+                val = '"' + props[key] + '"';
+            }
+        } else {
+            val = '"' + props[key] + '"';
+        }
+        var lastProp = keys.shift();
+        propPart += '["' + lastProp + '"]';
+        var propTemplate = options.minify ? nestedMinifiedPropTemplate : nestedPropTemplate;
+        var propValue = gutil.template(propTemplate, {
+            file: { },
+            data: {
+                ns: options.namespace,
+                key: propPart,
+                value: val
+            }
+        });
+        if (output.indexOf(propValue) === -1) {
+            output.push(propValue);
+        }
+        obj[lastProp] = val;
+    });
+    return output;
+}
+
+function getJsSimplePropsOutput(options, props) {
+    var template = options.minify ? minifiedTemplate : entryTemplate;
+    var output = [];
+    Object.keys(props).forEach(function(key) {
+        var val;
+        if (options.complexTypes) {
+            try {
+                //TODO check rValue
+                val = JSON.parse(props[key].replace(rValue, '\\$1'));
+            } catch (error) {
+                val = '"' + props[key].replace(rValue, '\\$1') + '"';
+            }
+        } else {
+            val = '"' + props[key].replace(rValue, '\\$1') + '"';
+        }
+        output.push(gutil.template(template, {
+            file: { },
+            //TODO check rKey
+            data: {
+                ns: options.namespace,
+                key: key.replace(rKey, '\\$1'),
+                value: val
+            }
+        }));
+    });
+    return output;
+}
+
 function getJsOutput(options, props) {
-    var output = '';
+    var output = [];
     if (!options.namespace) {
         options.namespace = 'props';
     }
@@ -99,82 +181,11 @@ function getJsOutput(options, props) {
         output = ['var ' + options.namespace + ' = ' + options.namespace + ' || {};'];
     }
     if (options.nestedProps) {
-        var obj = {};
-        Object.keys(props).forEach(function(key) {
-            var val = props[key];
-            var keys = key.split(options.nestingDelimiter);
-            var propPart = '';
-            while (keys.length > 1) {
-                var prop = keys.shift();
-                if (!obj.hasOwnProperty(prop)) {
-                    propPart += '["' + prop + '"]';
-                    obj[prop] = {};
-                }
-                obj = obj[prop];
-            }
-            var objTemplate = options.minify ? nestedMinifiedObjectTemplate : nestedObjectTemplate;
-            var objectValue = gutil.template(objTemplate, {
-                file: { },
-                data: {
-                    ns: options.namespace,
-                    key: propPart
-                }
-            });
-            if (output.indexOf(objectValue) === -1) {
-                output.push(objectValue);
-            }
-            if (options.complexTypes) {
-                try {
-                    val = JSON.parse(props[key]);
-                } catch (error) {
-                    val = '"' + props[key] + '"';
-                }
-            } else {
-                val = '"' + props[key] + '"';
-            }
-            var lastProp = keys.shift();
-            propPart += '["' + lastProp + '"]';
-            var propTemplate = options.minify ? nestedMinifiedPropTemplate : nestedPropTemplate;
-            var propValue = gutil.template(propTemplate, {
-                file: { },
-                data: {
-                    ns: options.namespace,
-                    key: propPart,
-                    value: val
-                }
-            });
-            if (output.indexOf(propValue) === -1) {
-                output.push(propValue);
-            }
-            obj[lastProp] = val;
-        });
-        options.minify ? output = output.join('') : output = output.join('\n') + '\n';
+        output = output.concat(getJsNestedPropsOutput(options, props));
     } else {
-        var template = options.minify ? minifiedTemplate : entryTemplate;
-        Object.keys(props).forEach(function(key) {
-            var val;
-            if (options.complexTypes) {
-                try {
-                    //TODO check rValue
-                    val = JSON.parse(props[key].replace(rValue, '\\$1'));
-                } catch (error) {
-                    val = '"' + props[key].replace(rValue, '\\$1') + '"';
-                }
-            } else {
-                val = '"' + props[key].replace(rValue, '\\$1') + '"';
-            }
-            output.push(gutil.template(template, {
-                file: { },
-                //TODO check rKey
-                data: {
-                    ns: options.namespace,
-                    key: key.replace(rKey, '\\$1'),
-                    value: val
-                }
-            }));
-        });
-        options.minify ? output = output.join('') : output = output.join('\n') + '\n';
+        output = output.concat(getJsSimplePropsOutput(options, props));
     }
+    options.minify ? output = output.join('') : output = output.join('\n') + '\n';
     return output;
 }
 
