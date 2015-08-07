@@ -15,8 +15,7 @@ var nestedObjectTemplate = '<%=data.ns%><%=data.key%> = <%=data.ns%><%=data.key%
 var nestedPropTemplate = '<%=data.ns%><%=data.key%> = <%=data.ns%><%=data.key%> || <%=data.value%>;';
 var nestedMinifiedObjectTemplate = '<%=data.ns%><%=data.key%>=<%=data.ns%><%=data.key%>||{};';
 var nestedMinifiedPropTemplate = '<%=data.ns%><%=data.key%>=<%=data.ns%><%=data.key%>||<%=data.value%>;';
-var rKey = /([\\'])/g;
-var rValue = /([\\"'])/g;
+var escapeRegex = /([\\"])/g;
 
 function getValidIdentifier(str) {
     var identifier = str.replace(/[^a-z0-9_$]/ig, '_');
@@ -72,6 +71,10 @@ function getNestedObject(props, options) {
     return obj;
 }
 
+function getEscapedString(str) {
+    return str.replace(escapeRegex, '\\$1');
+}
+
 function getJsonOutput(options, props) {
     if (options.nestedProps) {
         var obj = getNestedObject(props, options);
@@ -97,11 +100,12 @@ function getJsNestedPropsOutput(options, props) {
         var propPart = '';
         while (keys.length > 1) {
             var prop = keys.shift();
-            if (!obj.hasOwnProperty(prop)) {
-                propPart += '["' + prop + '"]';
-                obj[prop] = {};
+            var escapedProp = getEscapedString(prop);
+            if (!obj.hasOwnProperty(escapedProp)) {
+                propPart += '["' + escapedProp + '"]';
+                obj[escapedProp] = {};
             }
-            obj = obj[prop];
+            obj = obj[escapedProp];
         }
         var objTemplate = options.minify ? nestedMinifiedObjectTemplate : nestedObjectTemplate;
         var objectValue = gutil.template(objTemplate, {
@@ -111,19 +115,20 @@ function getJsNestedPropsOutput(options, props) {
                 key: propPart
             }
         });
-        if (output.indexOf(objectValue) === -1) {
+        if (output.indexOf(objectValue) === -1 && propPart) {
             output.push(objectValue);
         }
+        var value = getEscapedString(props[key]);
         if (options.complexTypes) {
             try {
-                val = JSON.parse(props[key]);
+                val = JSON.parse(value);
             } catch (error) {
-                val = '"' + props[key] + '"';
+                val = '"' + value + '"';
             }
         } else {
-            val = '"' + props[key] + '"';
+            val = '"' + value + '"';
         }
-        var lastProp = keys.shift();
+        var lastProp = getEscapedString(keys.shift());
         propPart += '["' + lastProp + '"]';
         var propTemplate = options.minify ? nestedMinifiedPropTemplate : nestedPropTemplate;
         var propValue = gutil.template(propTemplate, {
@@ -147,22 +152,21 @@ function getJsSimplePropsOutput(options, props) {
     var output = [];
     Object.keys(props).forEach(function(key) {
         var val;
+        var escapedValue = getEscapedString(props[key]);
         if (options.complexTypes) {
             try {
-                //TODO check rValue
-                val = JSON.parse(props[key].replace(rValue, '\\$1'));
+                val = JSON.parse(escapedValue);
             } catch (error) {
-                val = '"' + props[key].replace(rValue, '\\$1') + '"';
+                val = '"' + escapedValue + '"';
             }
         } else {
-            val = '"' + props[key].replace(rValue, '\\$1') + '"';
+            val = '"' + escapedValue + '"';
         }
         output.push(gutil.template(template, {
             file: { },
-            //TODO check rKey
             data: {
                 ns: options.namespace,
-                key: key.replace(rKey, '\\$1'),
+                key: getEscapedString(key),
                 value: val
             }
         }));

@@ -19,6 +19,7 @@ describe('gulp-props2json', function() {
 	var emptyFile;//TODO both
 	var specialFile;
 	var noExtFile;
+    var replaceFile;
 
     // buffer mode
 
@@ -49,6 +50,63 @@ describe('gulp-props2json', function() {
                 cwd: 'test',
                 contents: null
             });
+            replaceFile = new File({
+                path: 'test/replace.properties',
+                cwd: 'test',
+                contents: fs.readFileSync('test/replace.properties')
+            });
+        });
+
+        it('should return valid JS with quotation marks', function(done) {
+            var stream = props({ outputType: 'js' });
+
+            stream.once('data', function(file) {
+                file.contents.toString('utf8').should.equal('var props=props||{};props["\\"key\\""]="\\"value\\"";props["\\"new.key\\""]="\\"new.key.value\\"";');
+                path.extname(file.path).should.equal('.js');
+                done();
+            });
+
+            stream.write(replaceFile);
+            stream.end();
+        });
+
+        it('should return valid JS with nested props and quotation marks', function(done) {
+            var stream = props({ outputType: 'js', nestedProps: true });
+
+            stream.once('data', function(file) {
+                file.contents.toString('utf8').should.equal('var props=props||{};props["\\"key\\""]=props["\\"key\\""]||"\\"value\\"";props["\\"new"]=props["\\"new"]||{};props["\\"new"]["key\\""]=props["\\"new"]["key\\""]||"\\"new.key.value\\"";');
+                path.extname(file.path).should.equal('.js');
+                done();
+            });
+
+            stream.write(replaceFile);
+            stream.end();
+        });
+
+        it('should return valid JSON with quotation marks', function(done) {
+            var stream = props({ outputType: 'json' });
+
+            stream.once('data', function(file) {
+                file.contents.toString('utf8').should.equal('{"\\"key\\"":"\\"value\\"","\\"new.key\\"":"\\"new.key.value\\""}');
+                path.extname(file.path).should.equal('.json');
+                done();
+            });
+
+            stream.write(replaceFile);
+            stream.end();
+        });
+
+        it('should return valid JSON with nested props and quotation marks', function(done) {
+            var stream = props({ outputType: 'json', nestedProps: true });
+
+            stream.once('data', function(file) {
+                file.contents.toString('utf8').should.equal('{"\\"key\\"":"\\"value\\"","\\"new":{"key\\"":"\\"new.key.value\\""}}');
+                path.extname(file.path).should.equal('.json');
+                done();
+            });
+
+            stream.write(replaceFile);
+            stream.end();
         });
 
         //json
