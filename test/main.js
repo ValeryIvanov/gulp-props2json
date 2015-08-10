@@ -39,7 +39,7 @@ describe('gulp-props2json', function() {
             emptyFile = new File({
                 path: 'test/empty.properties',
                 cwd: 'test',
-                contents: new Buffer('')
+                contents: fs.readFileSync('test/empty.properties')
             });
             specialFile = new File({
                 path: 'test/special.properties',
@@ -387,6 +387,32 @@ describe('gulp-props2json', function() {
             });
 
             stream.write(propsFile);
+            stream.end();
+        });
+
+        it('should return empty JS object with empty properties files', function(done) {
+            var stream = props({ outputType: 'js' });
+
+            stream.once('data', function(file) {
+                file.contents.toString('utf8').should.equal('var props=props||{};');
+                path.extname(file.path).should.equal('.js');
+                done();
+            });
+
+            stream.write(emptyFile);
+            stream.end();
+        });
+
+        it('should return empty object JSON string with empty properties files', function(done) {
+            var stream = props({ outputType: 'json' });
+
+            stream.once('data', function(file) {
+                file.contents.toString('utf8').should.equal('{}');
+                path.extname(file.path).should.equal('.json');
+                done();
+            });
+
+            stream.write(emptyFile);
             stream.end();
         });
 
