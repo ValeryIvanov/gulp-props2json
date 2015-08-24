@@ -3,6 +3,7 @@
 [![npm version](https://badge.fury.io/js/gulp-props2json.svg)](http://badge.fury.io/js/gulp-props2json)
 [![Build Status](https://travis-ci.org/ValeryIvanov/gulp-props2json.svg?branch=master)](https://travis-ci.org/ValeryIvanov/gulp-props2json)
 [![Dependency Status](https://david-dm.org/ValeryIvanov/gulp-props2json.svg)](https://david-dm.org/ValeryIvanov/gulp-props2json)
+[![Code Climate](https://codeclimate.com/github/ValeryIvanov/gulp-props2json/badges/gpa.svg)](https://codeclimate.com/github/ValeryIvanov/gulp-props2json)
 
 > A [Gulp](https://github.com/gulpjs/gulp) plugin to convert [Java .properties](http://en.wikipedia.org/wiki/.properties) to [JSON](http://en.wikipedia.org/wiki/JSON)
 
