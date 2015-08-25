@@ -195,6 +195,7 @@ function getJsOutput(options, props) {
 
 function props2json(buffer, options) {
     var props = propsParser.parse(buffer.toString('utf8')); //returns object with simple properties
+    checkDuplicateValues(props);
 	var output = '';
     if (options.outputType === 'json') {
         output = getJsonOutput(options, props);
@@ -202,6 +203,18 @@ function props2json(buffer, options) {
         output = getJsOutput(options, props);
     }
     return new Buffer(output);
+}
+
+function checkDuplicateValues(obj) {
+    for (var key1 in obj) {
+        var value1 = obj[key1];
+        for (var key2 in obj) {
+            if (obj[key2] === value1 && key1 !== key2) {
+                //warning
+                gutil.log(gutil.colors.yellow(PLUGIN_NAME + ': duplicate value ' + value1 + ' found in properties with keys ' + key1 + ' ' + key2));
+            }
+        }
+    }
 }
 
 function outputFilename(filePath, options) {
