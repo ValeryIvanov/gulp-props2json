@@ -141,6 +141,9 @@ _The option is used only when `.json` output is generated._
 To handle errors across your entire pipeline, see the
 [gulp](https://github.com/gulpjs/gulp/blob/master/docs/recipes/combining-streams-to-handle-errors.md#combining-streams-to-handle-errors) documentation.
 
+## Warnings
+
+`gulp-props2json` will warn in console if properties have duplicate values.
 
 ## License
 

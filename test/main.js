@@ -20,6 +20,7 @@ describe('gulp-props2json', function() {
 	var specialFile;
 	var noExtFile;
     var replaceFile;
+    var duplicateFile;
 
     // buffer mode
 
@@ -54,6 +55,11 @@ describe('gulp-props2json', function() {
                 path: 'test/replace.properties',
                 cwd: 'test',
                 contents: fs.readFileSync('test/replace.properties')
+            });
+            duplicateFile = new File({
+                path: 'test/duplicate.properties',
+                cwd: 'test',
+                contents: fs.readFileSync('test/duplicate.properties')
             });
         });
 
@@ -413,6 +419,20 @@ describe('gulp-props2json', function() {
             });
 
             stream.write(emptyFile);
+            stream.end();
+        });
+
+        it('should warn about duplicate values', function(done) {
+            var stream = props({ outputType: 'json' });
+
+            stream.once('data', function(file) {
+                file.contents.toString('utf8').should.equal('{"key1":"value","key2":"value"}');
+                path.extname(file.path).should.equal('.json');
+
+                done();
+            });
+
+            stream.write(duplicateFile);
             stream.end();
         });
 

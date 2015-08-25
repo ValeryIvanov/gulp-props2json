@@ -206,12 +206,15 @@ function props2json(buffer, options) {
 }
 
 function checkDuplicateValues(obj) {
+    var duplicateKeys = [];
     for (var key1 in obj) {
         var value1 = obj[key1];
         for (var key2 in obj) {
-            if (obj[key2] === value1 && key1 !== key2) {
+            var value2 = obj[key2];
+            if ((value1 === value2) && (key1 !== key2) && (duplicateKeys.indexOf(key1) < 0)) {
+                duplicateKeys.push(key2);
                 //warning
-                gutil.log(gutil.colors.yellow(PLUGIN_NAME + ': duplicate value ' + value1 + ' found in properties with keys ' + key1 + ' ' + key2));
+                gutil.log(gutil.colors.yellow(PLUGIN_NAME + ': duplicate value \'' + value1 + '\' found in properties with keys \'' + key1 + '\' \'' + key2 + '\''));
             }
         }
     }
