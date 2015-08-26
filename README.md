@@ -134,6 +134,15 @@ Further transform the resulting output. It has the same usage as for [JSON.strin
 _The option is used only when `.json` output is generated._
 
 
+#### options.checkDuplicateValues
+
+Type: `Boolean`
+
+Default: `true`
+
+Will check and warn in console if properties have duplicate values.
+
+
 ## Errors
 
 `gulp-props2json` emits an 'error' event if something goes wrong.
@@ -141,9 +150,6 @@ _The option is used only when `.json` output is generated._
 To handle errors across your entire pipeline, see the
 [gulp](https://github.com/gulpjs/gulp/blob/master/docs/recipes/combining-streams-to-handle-errors.md#combining-streams-to-handle-errors) documentation.
 
-## Warnings
-
-`gulp-props2json` will warn in console if properties have duplicate values.
 
 ## License
 

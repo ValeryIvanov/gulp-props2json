@@ -195,7 +195,9 @@ function getJsOutput(options, props) {
 
 function props2json(buffer, options) {
     var props = propsParser.parse(buffer.toString('utf8')); //returns object with simple properties
-    checkDuplicateValues(props);
+    if (options.checkDuplicateValues) {
+        checkDuplicateValues(props);
+    }
 	var output = '';
     if (options.outputType === 'json') {
         output = getJsonOutput(options, props);
@@ -235,7 +237,8 @@ module.exports = function(options) {
         replacer: null,
         space: 0,
         nestingDelimiter: '.',
-        appendExt: false
+        appendExt: false,
+        checkDuplicateValues: true
     }, options);
 
     return through.obj(function(file, enc, callback) {
