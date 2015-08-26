@@ -423,7 +423,7 @@ describe('gulp-props2json', function() {
         });
 
         it('should warn about duplicate values', function(done) {
-            var stream = props({ outputType: 'json' });
+            var stream = props({ outputType: 'json', findUnusedProps: ['./test/*'] });
 
             stream.once('data', function(file) {
                 file.contents.toString('utf8').should.equal('{"key1":"value","key2":"value"}');

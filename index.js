@@ -1,5 +1,6 @@
 'use strict';
 
+var gulp = require('gulp');
 var gutil = require('gulp-util');
 var through = require('through2');
 var extend = require('extend');
@@ -198,6 +199,9 @@ function props2json(buffer, options) {
     if (options.checkDuplicateValues) {
         checkDuplicateValues(props);
     }
+    if (options.findUnusedProps) {
+        findUnusedProps(props, options.findUnusedProps);
+    }
 	var output = '';
     if (options.outputType === 'json') {
         output = getJsonOutput(options, props);
@@ -222,6 +226,33 @@ function checkDuplicateValues(obj) {
     }
 }
 
+function findUnusedProps(obj, paths) {
+
+    for (var key in obj) {
+
+        paths.forEach(function (path) {
+
+            gulp.src(path)
+                .pipe(through.obj(function (file, enc, cb) {
+                    if (file.isStream()) {
+                        file.contents = file.contents.pipe(new BufferStreams(function(err, buf, cb) {
+
+                            //console.log(file.contents.toString('utf8'));
+                        }));
+                    } else {
+
+                        //console.log(file.contents.toString('utf8'));
+                    }
+
+                    return cb();
+                }));
+
+        });
+
+    }
+
+}
+
 function outputFilename(filePath, options) {
     return (options.appendExt) ? filePath + '.' + options.outputType : gutil.replaceExtension(filePath, '.' + options.outputType);
 }
@@ -238,7 +269,8 @@ module.exports = function(options) {
         space: 0,
         nestingDelimiter: '.',
         appendExt: false,
-        checkDuplicateValues: true
+        checkDuplicateValues: true,
+        findUnusedProps: []
     }, options);
 
     return through.obj(function(file, enc, callback) {
