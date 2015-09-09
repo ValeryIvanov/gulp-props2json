@@ -28,7 +28,7 @@ gulp.src('./src/*.properties')
 
 // Generate a .js file
 gulp.src('./src/*.properties')
-  .pipe(props({ outputType: 'js' }))
+  .pipe(props2json({ outputType: 'js' }))
   .pipe(gulp.dest('./dist/'))
 ```
 
